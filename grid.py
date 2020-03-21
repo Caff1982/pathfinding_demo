@@ -1,10 +1,8 @@
 from collections import deque
 import pygame
-import heapq
 from settings import *
 
 vec = pygame.math.Vector2
-
 
 class Node:
     def __init__(self, position):
@@ -19,9 +17,8 @@ class Grid:
         self.width = width // TILESIZE
         self.height = height // TILESIZE    
         self.walls = []
-        # TODO start/end to be set in pygame, hardcoded for now
-        self.start = vec(3, 3) 
-        self.end = vec(13, 5)
+        self.weights = {}
+
         self.possible_moves = [vec(1, 0), vec(-1, 0), vec(0, 1), vec(0, -1)]
         # Uncomment line below for diagonal movement
         # self.possible_moves += [vec(1, 1), vec(-1, 1), vec(1, -1),vec(-1, -1)]
@@ -36,18 +33,12 @@ class Grid:
                     neighbours.append(n)
         return neighbours
 
-
-class WeightedGrid(Grid):
-    def __init__(self, width, height):
-        super().__init__(width, height)
-        self.weights = {}
-
     def cost(self, from_node, to_node):
         """
         If edge is orthagonal cost is 10
         If edge is diagonal cost is 14
         """
-        if (vec(to_node) - vec(from_node)).length_squared() == 1:
+        if (vec(to_node) - vec(from_node)).length_squared == 1:
             return self.weights.get(to_node, 0) + 10
         else:
             return self.weights.get(to_node, 0) + 14
@@ -62,19 +53,4 @@ class WeightedGrid(Grid):
             pg.draw.rect(screen, FOREST, rect)
 
 
-class PriorityQueue:
-    def __init__(self):
-        self.nodes = []
 
-    def put(self, node, cost):
-        heapq.heappush(self.nodes, (cost, node))
-
-    def get(self):
-        return heapq.heappop(self.nodes)[1]
-
-    def empty(self):
-        return len(self.nodes) == 0
-
-# if __name__ == '__main__':
-#     g = WeightedGrid(15, 10)
-#     print(g.possible_moves)
