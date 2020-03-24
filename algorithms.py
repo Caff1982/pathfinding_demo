@@ -10,7 +10,7 @@ class BaseAlgorithm:
     Base abstract class from which the search algorithms
     can inherit
     """
-    def __init__(self, graph, start, end):
+    def __init__(self, graph, start, end, use_diagonals):
         self.graph = graph
         self.start = start
         self.end = end
@@ -21,7 +21,7 @@ class BaseAlgorithm:
         self.cost = {}
         self.visited[vec2int(self.start)] = None
         self.cost[vec2int(self.start)] = 0
-        self.use_diagonals = False
+        self.use_diagonals = use_diagonals
         self.finished = False
         self.count = 1
 
@@ -51,8 +51,8 @@ class BFS(BaseAlgorithm):
     """
     Breadth-First Search algorithm
     """
-    def __init__(self, graph, start, end):
-        super(BFS, self).__init__(graph, start, end)
+    def __init__(self, graph, start, end, use_diagonals):
+        super(BFS, self).__init__(graph, start, end, use_diagonals)
         self.queue = deque([self.start])
 
     def step(self):
@@ -71,8 +71,8 @@ class DFS(BaseAlgorithm):
     """
     Depth-First Search algorithm
     """
-    def __init__(self, graph, start, end):
-        super(DFS, self).__init__(graph, start, end)
+    def __init__(self, graph, start, end, use_diagonals):
+        super(DFS, self).__init__(graph, start, end, use_diagonals)
         self.stack = deque([self.start])
 
     def step(self):
@@ -91,8 +91,8 @@ class Dijkstra(BaseAlgorithm):
     """
     Dijskstra Search algorithm
     """
-    def __init__(self, graph, start, end):
-        super(Dijkstra, self).__init__(graph, start, end)
+    def __init__(self, graph, start, end, use_diagonals):
+        super(Dijkstra, self).__init__(graph, start, end, use_diagonals)
         self.frontier = PriorityQueue()
         self.frontier.put(vec2int(self.start), 0)
 
@@ -116,8 +116,8 @@ class AStar(BaseAlgorithm):
     """
     Dijskstra Search algorithm
     """
-    def __init__(self, graph, start, end):
-        super(AStar, self).__init__(graph, start, end)
+    def __init__(self, graph, start, end, use_diagonals):
+        super(AStar, self).__init__(graph, start, end, use_diagonals)
         self.frontier = PriorityQueue()
         self.frontier.put(vec2int(self.start), 0)
 

@@ -27,7 +27,11 @@ class App:
         # TODO: Hardcoded for now, should choose in pygame
         self.start = vec(3, 3) 
         self.end = vec(13, 5)
-        self.algo = AStar(self.grid, self.start, self.end)
+
+        # Initialize class variables to move start/end
+        self.use_diagonals = False
+        self.moving_start = False
+        self.moving_end = False
 
     def draw_square(self, pos, color):
         rect = pygame.Rect(pos * TILESIZE, (TILESIZE, TILESIZE))
@@ -65,38 +69,64 @@ class App:
 
         pygame.display.update()
 
-    def create_maze(self):
+    def create_maze(self): 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                sys.exit()
-            if event.type == pygame.KEYDOWN:
+                self.running = False
+            elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    sys.exit()
-                # Space-bar will start the search
-                if event.key == pygame.K_SPACE:
+                    self.running = False
+                elif event.key == pygame.K_a:
+                    print('Using A star algorithm')
+                    self.algo = AStar(self.grid, self.start, self.end, self.use_diagonals)
                     self.state = 'solving_maze'
+                elif event.key == pygame.K_b:
+                    print('Using Breadth_First Search algorithm')
+                    self.algo = BFS(self.grid, self.start, self.end, self.use_diagonals)
+                    self.state = 'solving_maze'
+                elif event.key == pygame.K_d:
+                    print('Using Dijkstra Search algorithm')
+                    self.algo = Dijkstra(self.grid, self.start, self.end, self.use_diagonals)
+                    self.state = 'solving_maze'
+                elif event.key == pygame.K_4:
+                    print('4-way movement selected')
+                    self.use_diagonals = False
+                elif event.key == pygame.K_8:
+                    print('8-way movement selected')
+                    self.use_diagonals = True
+
+
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                pos = vec(pygame.mouse.get_pos()) // TILESIZE
+                if self.moving_start:
+                    self.start = pos
+                    self.moving_start = False
+                elif self.moving_end:
+                    self.end = pos
+                    self.moving_end = False
+
+                elif pos in self.grid.walls:
+                    self.grid.walls.remove(pos)
+                elif pos == self.start:
+                    self.moving_start = True
+                elif pos == self.end:
+                    self.moving_end = True
+                else:
+                    self.grid.walls.append(pos)
+
+            elif event.type == pygame.MOUSEMOTION:
+                pos = vec(pygame.mouse.get_pos()) // TILESIZE
+                if self.moving_start:
+                    self.start = pos
+                elif self.moving_end:
+                    self.end = pos
 
     def run(self):
         while self.running:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    self.running = False
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE:
-                        self.running = False
-                    # Space-bar will start the search
-                    if event.key == pygame.K_SPACE:
-                        self.state = 'solving_maze'
+            if self.state == 'creating_maze':
+                self.create_maze()
 
-                if self.state == 'creating_maze':
-                    if event.type == pygame.MOUSEBUTTONDOWN:
-                        pos = vec(pygame.mouse.get_pos()) // TILESIZE     
-                        if pos in self.grid.walls:
-                            self.grid.walls.remove(pos)
-                        else:
-                            self.grid.walls.append(pos)
-
-            if self.state == 'solving_maze':
+            elif self.state == 'solving_maze':
                 self.algo.step()
             elif self.state == 'finished':
                 time.sleep(10)
