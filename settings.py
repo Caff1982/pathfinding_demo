@@ -9,9 +9,11 @@ def vec2int(v):
     return (int(v.x), int(v.y))
 
 
-TILESIZE = 50
-WIDTH = 15 * TILESIZE
-HEIGHT = 10 * TILESIZE
+TILESIZE = 25
+ROWS = 20
+COLUMNS = 30
+HEIGHT = ROWS * TILESIZE
+WIDTH = COLUMNS * TILESIZE
 FPS = 20
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)

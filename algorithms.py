@@ -1,9 +1,9 @@
 from collections import deque
 import heapq
 from settings import *
-import pygame
+import math
 
-vec = pygame.math.Vector2
+
 
 class BaseAlgorithm:
     """
@@ -19,11 +19,17 @@ class BaseAlgorithm:
         # Cost is used for Dijkstra
         self.visited = {}
         self.cost = {}
-        self.visited[vec2int(self.start)] = None
-        self.cost[vec2int(self.start)] = 0
+        self.visited[self.start] = None
+        self.cost[self.start] = 0
         self.use_diagonals = use_diagonals
         self.finished = False
         self.count = 1
+
+        if self.use_diagonals:
+            self.possible_moves = [(1, 0), (-1, 0), (0, 1), (0, -1),
+                                   (1, 1), (-1, 1), (1,-1), (-1,-1)]
+        else:
+            self.possible_moves = [(1, 0), (-1, 0), (0, 1), (0, -1)]
 
     def is_finished(self):
         return self.finished
@@ -34,7 +40,27 @@ class BaseAlgorithm:
         """
         raise NotImplementedError
 
-    def get_path(self):
+    def get_neighbours(self, node):
+        neighbours = []
+        for dx, dy in self.possible_moves:
+            x, y = node[0] + dx, node[1] + dy
+            if self.graph.is_valid(x, y) and (x, y) not in self.visited:            
+                    neighbours.append((x, y))
+        return neighbours
+
+    def get_move_cost(self, a, b):
+        """
+        a is from node
+        b is to node
+        If edge is orthagonal cost is 10
+        If edge is diagonal cost is 14
+        """
+        if ((b[0]-a[0])-(b[1]-a[1]))**2 == 1:
+            return 10
+        else:
+            return 14
+
+    def get_solution(self):
         """
         Draws the solution from end-tile to start-tile
         """
@@ -42,8 +68,8 @@ class BaseAlgorithm:
         current = self.end
         while current != self.start:
             path.append(current)
-            current = current + self.visited[vec2int(current)]
-
+            parent = self.visited[current]
+            current = (current[0] + parent[0], current[1] + parent[1])
         return path
 
 
@@ -53,19 +79,18 @@ class BFS(BaseAlgorithm):
     """
     def __init__(self, graph, start, end, use_diagonals):
         super(BFS, self).__init__(graph, start, end, use_diagonals)
-        self.queue = deque([self.start])
+        self.frontier = deque([self.start])
 
     def step(self):
-        current = self.queue.popleft()
+        current = self.frontier.popleft()
         if current == self.end:
             print('Solution found!')
             self.finished = True
-
-        for node in self.graph.get_neighbours(current):
-            if vec2int(node) not in self.visited:
-                self.queue.append(node)
-                self.visited[vec2int(node)] = current - node
-
+        else:
+            self.count +=1
+            for node in self.get_neighbours(current):
+                self.frontier.append(node)
+                self.visited[node] = (current[0] - node[0], current[1] - node[1])
 
 class DFS(BaseAlgorithm):
     """
@@ -73,19 +98,18 @@ class DFS(BaseAlgorithm):
     """
     def __init__(self, graph, start, end, use_diagonals):
         super(DFS, self).__init__(graph, start, end, use_diagonals)
-        self.stack = deque([self.start])
+        self.frontier = deque([self.start])
 
     def step(self):
-        current = self.stack.pop()
+        current = self.frontier.pop()
         if current == self.end:
             print('Solution found!')
             self.finished = True
-
-        for node in self.graph.get_neighbours(current):
-            if vec2int(node) not in self.visited:
-                self.stack.append(node)
-                self.visited[vec2int(node)] = current - node
-
+        else:
+            self.count +=1
+            for node in self.get_neighbours(current):
+                self.frontier.append(node)
+                self.visited[node] = (current[0] - node[0], current[1] - node[1])
 
 class Dijkstra(BaseAlgorithm):
     """
@@ -94,23 +118,22 @@ class Dijkstra(BaseAlgorithm):
     def __init__(self, graph, start, end, use_diagonals):
         super(Dijkstra, self).__init__(graph, start, end, use_diagonals)
         self.frontier = PriorityQueue()
-        self.frontier.put(vec2int(self.start), 0)
+        self.frontier.put(self.start, 0)
 
     def step(self):
         current = self.frontier.get()
         if current == self.end:
             print('Solution found!')
             self.finished = True
-
-        for n in self.graph.get_neighbours(vec(current)):
-                n = vec2int(n)
-                n_cost = self.cost[current] + self.graph.cost(current, n)
-                if n not in self.cost or n_cost < self.cost[n]:
-                    self.cost[n] = n_cost
-                    priority = n_cost 
-                    self.frontier.put(n, priority)
-                    self.visited[n] = vec(current) - vec(n)
-
+        else:
+            self.count +=1
+            for n in self.get_neighbours(current):
+                    move_cost = self.cost[current] + self.get_move_cost(current, n)
+                    if n not in self.cost or move_cost < self.cost[n]:
+                        self.cost[n] = move_cost
+                        priority = move_cost 
+                        self.frontier.put(n, priority)
+                        self.visited[n] = (current[0] - n[0], current[1] - n[1])
 
 class AStar(BaseAlgorithm):
     """
@@ -119,26 +142,31 @@ class AStar(BaseAlgorithm):
     def __init__(self, graph, start, end, use_diagonals):
         super(AStar, self).__init__(graph, start, end, use_diagonals)
         self.frontier = PriorityQueue()
-        self.frontier.put(vec2int(self.start), 0)
+        self.frontier.put(self.start, 0)
 
     def heuristic(self, a, b):
         # Manhattan distance, scaled by 10 for cost
-        return (abs(a.x - b.x) +  abs(a.y - b.y)) * 10
+        dx = abs(a[0]-b[0])
+        dy = abs(a[1]-b[1])
+        return 10 * (dx + dy)
+        # Euclidean distance
+        # return math.sqrt((b[0]-a[0])**2 + (b[1]-a[1])**2) * 10
 
     def step(self):
         current = self.frontier.get()
         if current == self.end:
             print('Solution found!')
             self.finished = True
+        else:
+            self.count +=1
+            for n in self.get_neighbours(current):
+                    move_cost = self.cost[current] + self.get_move_cost(current, n)
+                    if n not in self.cost or move_cost < self.cost[n]:
+                        self.cost[n] = move_cost
+                        priority = move_cost + self.heuristic(self.end, n)
+                        self.frontier.put(n, priority)
+                        self.visited[n] = (current[0] - n[0], current[1] - n[1])
 
-        for n in self.graph.get_neighbours(vec(current)):
-                n = vec2int(n)
-                n_cost = self.cost[current] + self.graph.cost(current, n)
-                if n not in self.cost or n_cost < self.cost[n]:
-                    self.cost[n] = n_cost
-                    priority = n_cost + self.heuristic(self.end, vec(n))
-                    self.frontier.put(n, priority)
-                    self.visited[n] = vec(current) - vec(n)
 
 class PriorityQueue:
     """
@@ -156,5 +184,3 @@ class PriorityQueue:
 
     def empty(self):
         return len(self.nodes) == 0
-
-
