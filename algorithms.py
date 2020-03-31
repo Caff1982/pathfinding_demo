@@ -149,8 +149,6 @@ class AStar(BaseAlgorithm):
         dx = abs(a[0]-b[0])
         dy = abs(a[1]-b[1])
         return 10 * (dx + dy)
-        # Euclidean distance
-        # return math.sqrt((b[0]-a[0])**2 + (b[1]-a[1])**2) * 10
 
     def step(self):
         current = self.frontier.get()

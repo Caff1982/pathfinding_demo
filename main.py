@@ -2,9 +2,9 @@ import pygame
 from collections import deque
 import sys
 import time
-from grid1 import Grid
+from grid import Grid
 from settings import *
-from algorithms1 import BFS, DFS, AStar, Dijkstra
+from algorithms import BFS, DFS, AStar, Dijkstra
 
 vec = pygame.math.Vector2
 
@@ -24,14 +24,17 @@ class App:
         self.running = True
         self.grid = Grid(ROWS, COLUMNS)
 
-        # TODO: Hardcoded for now, should choose in pygame
-        self.start = (3, 18) 
+        self.start = (3, 18)
         self.end = (13, 5)
-        self.solution = None
+        self.home_img = pygame.image.load('icons/home.png').convert_alpha()
+        self.home_img = pygame.transform.scale(self.home_img, (TILESIZE, TILESIZE))
+        self.end_img = pygame.image.load('icons/target.png').convert_alpha()
+        self.end_img = pygame.transform.scale(self.end_img, (TILESIZE, TILESIZE))
 
         # Initialize variables to move start/end
         self.use_diagonals = True
         self.paused = False
+        self.solution = None
         self.moving_start = False
         self.moving_end = False
 
@@ -40,6 +43,14 @@ class App:
         pos = (pos[0] * TILESIZE, pos[1] * TILESIZE)
         rect = pygame.Rect(pos, (TILESIZE, TILESIZE))
         pygame.draw.rect(self.screen, color, rect)
+
+    def draw_icons(self):
+        start_pos = (self.start[0] * TILESIZE + TILESIZE/2,
+                     self.start[1] * TILESIZE + TILESIZE/2)
+        self.screen.blit(self.home_img, self.home_img.get_rect(center=start_pos))
+        end_pos = (self.end[0] * TILESIZE + TILESIZE/2,
+                     self.end[1] * TILESIZE + TILESIZE/2)
+        self.screen.blit(self.end_img, self.end_img.get_rect(center=end_pos))
 
     def update(self):
         self.screen.fill(WHITE)
@@ -61,10 +72,11 @@ class App:
             for tile in self.solution:
                 self.draw_square(tile, CYAN)
 
-
         # Draw start and end squares
         self.draw_square(self.start, GREEN)
         self.draw_square(self.end, RED)
+        self.draw_icons()
+
         # Draw grid-lines
         for x in range(0, WIDTH, TILESIZE):
             pygame.draw.line(self.screen, MEDGRAY, (x, 0), (x, HEIGHT))
@@ -157,10 +169,6 @@ class App:
                 print('Press Spacebar to continue')
                 self.solution = self.algo.get_solution()
                 self.state = 'plot_solution'
-                print(self.algo.visited.keys())
-
-
-
 
 
     def show_solution(self):
@@ -177,16 +185,11 @@ class App:
         while self.running:
             if self.state == 'creating_maze':
                 self.create_maze()
-
             elif self.state == 'solving_maze':
                 self.solve_maze()
-                
-
             elif self.state == 'plot_solution':
                 self.show_solution()
 
-
-   
 
             self.update()
             self.clock.tick(FPS)
